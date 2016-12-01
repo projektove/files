@@ -18,7 +18,7 @@ TARGET=/root/docker-compose.yml
 if [[ ! -f $TARGET ]]; then
   echo "nope"
   echo "Installing docker-compose.yml..."
-  curl -k -L "https://github.com/projektove/files/master/docker-compose/docker-compose.yml" -o $TARGET
+  curl -k -L "https://raw.github.com/projektove/files/master/docker-compose/docker-compose.yml" -o $TARGET
   echo "Done."
 fi
 
