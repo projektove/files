@@ -1,45 +1,41 @@
 version: '2'
 
 services:
-
   mariadb:
-    container_name: mariadb
+    container_name: registry.gitlab.com/projektove/mariadb
     image: mariadb:10.0
     volumes:
       - mariadb-data:/var/lib/mysql
     ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD:
-      MYSQL_DATABASE: pcz_production
+      - '3306:3306'
+    env_file: .env
 
   redis:
+    container_name: registry.gitlab.com/projektove/redis
     image: redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
+    volumes:
+      - redis-data:/var/lib/redis/data
 
   app:
+    container_name: projektove
     image: registry.gitlab.com/projektove/projektove:latest
-    command: foreman start
+    command: foreman start -d /app -f Procfile.production
     volumes:
-      - ruby2.1-gems:/usr/local/bundle
-      - .:/app
+      - ./nginx:/etc/nginx
+      - ./files:/app/files
+      - ./log:/app/log
+    depends_on:
+      - redis
+      - mariadb
     links: &app_links
       - mariadb:mariadb
       - redis:redis
-    environment:
-      # ENABLE_DEBUG_SERVER: 1
-      RACK_ENV: production
-      RAILS_ENV: production
-      SECRET_TOKEN:
-      SMTP_HOST: 0.0.0.0
-      SMTP_PORT: 25
-      SMTP_DOMAIN:
-    # env_file: .env # Include the environment variables in the unversioned .env file
-    depends_on:
-      - mariadb
-      - redis
+    ports:
+      - '80:80'
+    env_file: .env
 
 volumes:
   mariadb-data:
-  ruby2.1-gems:
+  redis-data:
