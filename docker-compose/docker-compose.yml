@@ -4,6 +4,7 @@ services:
   mariadb:
     container_name: registry.gitlab.com/projektove/mariadb
     image: mariadb:10.1
+    restart: always
     volumes:
       - mariadb-data:/var/lib/mysql
     ports:
@@ -13,13 +14,15 @@ services:
   redis:
     container_name: registry.gitlab.com/projektove/redis
     image: redis
+    restart: always
     volumes:
       - redis-data:/var/lib/redis/data
 
   app:
     container_name: projectly
     image: registry.gitlab.com/projektove/projektove:latest
-    command: foreman start -d /app -f Procfile.production
+    command: bash -c 'bundle exec rake db:migrate && foreman start -d /app'
+    restart: always
     volumes:
       - ./nginx:/etc/nginx
       - ./files:/app/files
@@ -33,6 +36,25 @@ services:
     ports:
       - '80:80'
     env_file: .env
+
+  # imapcron:
+  #   container_name: imapcron
+  #  image: registry.gitlab.com/projektove/imap-mail-handler:latest
+  #  restart: always
+  #  volumes:
+  #    - /var/log/pcz:/app/log
+  #  depends_on:
+  #    - app
+  #  links:
+  #    - app:projectly
+  #  environment:
+  #    IMAP_SERVER: mail
+  #    IMAP_LOGIN: login@example.com
+  #    IMAP_PASSWD: password
+  #    SMTP_DOMAIN: example.com
+  #    SMTP_DISABLED: 1
+  #    INSTANCE_URL: http://projectly:3000
+  #    INSTANCE_KEY: propertenanthandler
 
 volumes:
   mariadb-data:
