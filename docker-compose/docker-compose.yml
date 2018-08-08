@@ -1,60 +1,100 @@
-version: '3'
+version: '3.5'
+
+x-logging:
+  syslog: &syslog
+    driver: syslog
+    options:
+      tag: projectly
+  json: &json
+    driver: json-file
+    options:
+      max-size: 200k
+      max-file: '5'
 
 services:
   mariadb:
-    container_name: registry.gitlab.com/projektove/mariadb
+    container_name: mariadb
     image: mariadb:10.1
     restart: always
+    logging: *syslog
     volumes:
       - mariadb-data:/var/lib/mysql
     ports:
-      - '3306:3306'
+      - 3306:3306
     env_file: .env
 
   redis:
-    container_name: registry.gitlab.com/projektove/redis
+    container_name: redis
     image: redis
     restart: always
+    logging: *syslog
     volumes:
       - redis-data:/var/lib/redis/data
 
-  app:
-    container_name: projectly
+  proxy:
+    container_name: proxy
     image: registry.gitlab.com/projektove/projektove:latest
-    command: bash -c 'bundle exec rake db:migrate && foreman start -d /app'
-    restart: always
+    command: nginx
     volumes:
       - ./nginx:/etc/nginx
+      - /var/log/pcz:/app/log
+    ports:
+      - 2000:80
+    links:
+      - backend-ruby:backend-ruby
+
+  backend-ruby:
+    container_name: backend-ruby
+    image: registry.gitlab.com/projektove/projektove:latest
+    command: /backend-ruby-entrypint.sh
+    restart: always
+    logging: *syslog
+    volumes:
+      - ./Procfile:/app/Procfile
       - ./files:/app/files
       - ./log:/app/log
     depends_on:
-      - redis
       - mariadb
+      - redis
     links:
       - mariadb:mariadb
       - redis:redis
-    ports:
-      - '80:80'
+    env_file: .env
+
+  cron:
+    container_name: cron
+    image: registry.gitlab.com/projektove/projektove:latest
+    command: /cron-entrypoint.sh
+    volumes:
+      - ./crontab:/root/crontab
+      - ./log:/app/log
+    depends_on:
+      - mariadb
+      - redis
+    links:
+      - mariadb:mariadb
+      - redis:redis
     env_file: .env
 
   # imapcron:
   #   container_name: imapcron
   #  image: registry.gitlab.com/projektove/imap-mail-handler:latest
   #  restart: always
+  #  logging: *syslog
   #  volumes:
-  #    - /var/log/pcz:/app/log
+  #    - ./log:/app/log
   #  depends_on:
-  #    - app
+  #    - backend-ruby
   #  links:
-  #    - app:projectly
+  #    - backend-ruby:backend-ruby
   #  environment:
   #    IMAP_SERVER: mail
   #    IMAP_LOGIN: login@example.com
   #    IMAP_PASSWD: password
   #    SMTP_DOMAIN: example.com
   #    SMTP_DISABLED: 1
-  #    INSTANCE_URL: http://projectly:3000
-  #    INSTANCE_KEY: propertenanthandler
+  #    INSTANCE_URL: http://backend-ruby:3000
+  #    INSTANCE_KEY: tenantmailhandler
 
 volumes:
   mariadb-data:
