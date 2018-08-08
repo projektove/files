@@ -34,7 +34,7 @@ services:
   proxy:
     container_name: proxy
     image: registry.gitlab.com/projektove/projektove:latest
-    command: nginx
+    command: /proxy-entrypoint.sh
     restart: always
     volumes:
       - ./nginx:/etc/nginx
@@ -54,6 +54,38 @@ services:
       - ./Procfile:/app/Procfile
       - ./files:/app/files
       - ./log:/app/log
+    depends_on:
+      - mariadb
+      - redis
+    links:
+      - mariadb:mariadb
+      - redis:redis
+    env_file: .env
+
+  notifier:
+    container_name: notifier
+    image: registry.gitlab.com/projektove/projektove:latest
+    command: /notifier-entrypoint.sh
+    restart: always
+    logging: *syslog
+    volumes:
+      ./log:/app/log
+    depends_on:
+      - mariadb
+      - redis
+    links:
+      - mariadb:mariadb
+      - redis:redis
+    env_file: .env
+
+  sidekiq:
+    container_name: sidekiq
+    image: registry.gitlab.com/projektove/projektove:latest
+    command: /sidekiq-entrypoint.sh
+    restart: always
+    logging: *syslog
+    volumes:
+      ./log:/app/log
     depends_on:
       - mariadb
       - redis
