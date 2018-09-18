@@ -16,7 +16,10 @@ services:
     container_name: mariadb
     image: mariadb:10.1
     restart: always
-    logging: *syslog
+    logging: 
+      <<: *syslog
+      options:
+        tag: projectly.mariadb
     volumes:
       - mariadb-data:/var/lib/mysql
     ports:
@@ -27,7 +30,10 @@ services:
     container_name: redis
     image: redis
     restart: always
-    logging: *syslog
+    logging: 
+      <<: *syslog
+      options:
+        tag: projectly.redis
     volumes:
       - redis-data:/var/lib/redis/data
 
@@ -36,9 +42,13 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /proxy-entrypoint.sh
     restart: always
+    logging: 
+      <<: *syslog
+      options:
+        tag: projectly.proxy
     volumes:
       - ./nginx:/etc/nginx
-      - /var/log/pcz:/app/log
+      - ./log:/app/log
     ports:
       - 2000:80
     links:
@@ -49,9 +59,11 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /backend-ruby-entrypint.sh
     restart: always
-    logging: *syslog
+    logging: 
+      <<: *syslog
+      options:
+        tag: projectly.backend-ruby
     volumes:
-      - ./Procfile:/app/Procfile
       - ./files:/app/files
       - ./log:/app/log
     depends_on:
@@ -67,7 +79,10 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /notifier-entrypoint.sh
     restart: always
-    logging: *syslog
+    logging: 
+      <<: *syslog
+      options:
+        tag: projectly.notifier
     volumes:
       ./log:/app/log
     depends_on:
@@ -83,7 +98,10 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /sidekiq-entrypoint.sh
     restart: always
-    logging: *syslog
+    logging: 
+      <<: *syslog
+      options:
+        tag: projectly.sidekiq
     volumes:
       ./log:/app/log
     depends_on:
@@ -99,8 +117,13 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /cron-entrypoint.sh
     restart: always
+    logging: 
+      <<: *syslog
+      options:
+        tag: projectly.cron
     volumes:
       - ./crontab:/root/crontab
+      - ./.env:/.env
       - ./log:/app/log
     depends_on:
       - mariadb
@@ -114,7 +137,10 @@ services:
   #   container_name: imapcron
   #  image: registry.gitlab.com/projektove/imap-mail-handler:latest
   #  restart: always
-  #  logging: *syslog
+  #   logging: 
+  #     <<: *syslog
+  #     options:
+  #       tag: projectly.imapcron
   #  volumes:
   #    - ./log:/app/log
   #  depends_on:
