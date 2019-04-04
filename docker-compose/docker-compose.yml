@@ -8,18 +8,18 @@ x-logging:
   json: &json
     driver: json-file
     options:
-      max-size: 200k
-      max-file: '5'
+      max-size: 500k
+      max-file: '10'
 
 services:
-  mariadb:
-    container_name: mariadb
+  mysql:
+    container_name: mysql
     image: mariadb:10.1
     restart: always
-    logging: 
+    logging:
       <<: *syslog
       options:
-        tag: projectly.mariadb
+        tag: projectly.mysql
     volumes:
       - mariadb-data:/var/lib/mysql
     ports:
@@ -30,7 +30,7 @@ services:
     container_name: redis
     image: redis
     restart: always
-    logging: 
+    logging:
       <<: *syslog
       options:
         tag: projectly.redis
@@ -42,7 +42,7 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /proxy-entrypoint.sh
     restart: always
-    logging: 
+    logging:
       <<: *syslog
       options:
         tag: projectly.proxy
@@ -59,7 +59,7 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /backend-ruby-entrypint.sh
     restart: always
-    logging: 
+    logging:
       <<: *syslog
       options:
         tag: projectly.backend-ruby
@@ -67,10 +67,10 @@ services:
       - ./files:/app/files
       - ./log:/app/log
     depends_on:
-      - mariadb
+      - mysql
       - redis
     links:
-      - mariadb:mariadb
+      - mysql:mysql
       - redis:redis
     env_file: .env
 
@@ -79,17 +79,17 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /notifier-entrypoint.sh
     restart: always
-    logging: 
+    logging:
       <<: *syslog
       options:
         tag: projectly.notifier
     volumes:
       ./log:/app/log
     depends_on:
-      - mariadb
+      - mysql
       - redis
     links:
-      - mariadb:mariadb
+      - mysql:mysql
       - redis:redis
     env_file: .env
 
@@ -98,17 +98,17 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /sidekiq-entrypoint.sh
     restart: always
-    logging: 
+    logging:
       <<: *syslog
       options:
         tag: projectly.sidekiq
     volumes:
       ./log:/app/log
     depends_on:
-      - mariadb
+      - mysql
       - redis
     links:
-      - mariadb:mariadb
+      - mysql:mysql
       - redis:redis
     env_file: .env
 
@@ -117,7 +117,7 @@ services:
     image: registry.gitlab.com/projektove/projektove:latest
     command: /cron-entrypoint.sh
     restart: always
-    logging: 
+    logging:
       <<: *syslog
       options:
         tag: projectly.cron
@@ -126,10 +126,10 @@ services:
       - ./.env:/.env
       - ./log:/app/log
     depends_on:
-      - mariadb
+      - mysql
       - redis
     links:
-      - mariadb:mariadb
+      - mysql:mysql
       - redis:redis
     env_file: .env
 
@@ -137,7 +137,7 @@ services:
   #   container_name: imapcron
   #  image: registry.gitlab.com/projektove/imap-mail-handler:latest
   #  restart: always
-  #   logging: 
+  #   logging:
   #     <<: *syslog
   #     options:
   #       tag: projectly.imapcron
