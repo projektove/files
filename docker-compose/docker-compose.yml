@@ -84,7 +84,7 @@ services:
       options:
         tag: projectly.notifier
     volumes:
-      ./log:/app/log
+      - ./log:/app/log
     depends_on:
       - mysql
       - redis
@@ -103,7 +103,7 @@ services:
       options:
         tag: projectly.sidekiq
     volumes:
-      ./log:/app/log
+      - ./log:/app/log
     depends_on:
       - mysql
       - redis
